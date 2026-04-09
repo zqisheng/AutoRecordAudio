@@ -3,6 +3,7 @@ package com.haha.autorecordaudio;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
@@ -25,7 +26,13 @@ public class MainActivity extends AppCompatActivity {
         Button btnStartRecord = findViewById(R.id.btn_start_record);
         Button btnMyRecordings = findViewById(R.id.btn_my_recordings);
         tvPermissionStatus = findViewById(R.id.tv_permission_status);
+        TextView linkTextView = findViewById(R.id.tv_link);
 
+        linkTextView.setOnClickListener(v -> {
+            // 这里打开链接
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/zqisheng/AutoRecordAudio"));
+            startActivity(intent);
+        });
         // 检查必要权限
         checkRequiredPermissions();
 

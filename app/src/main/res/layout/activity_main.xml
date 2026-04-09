@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="内部音频录制器"
+        android:text="开源音频录制器"
         android:textSize="26sp"
         android:textStyle="bold"
         android:textColor="#1976D2"
@@ -28,18 +28,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="功能介绍"
-            android:textSize="18sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#333333" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="• 录制手机内正在播放的音频（如音乐、视频、游戏声音）\n• 支持用户自定义保存位置和文件名\n• 可播放、剪辑录音并导出为 WAV\n• 长按录音列表可删除文件"
-            android:textSize="15sp"
+            android:text="• 该应用完全由AI开发,风险自负\n• 录制手机内正在播放的音频（如音乐、视频、游戏声音）\n• 支持用户自定义保存位置和文件名\n• 可播放、剪辑录音并导出为 WAV\n• 长按录音列表可删除文件"
+            android:textSize="12sp"
             android:textColor="#555555"
             android:layout_marginTop="8dp"
             android:lineSpacingExtra="4dp" />
+
     </LinearLayout>
 
     <!-- 按钮区域 -->
@@ -74,4 +75,18 @@
         android:layout_marginTop="40dp"
         android:layout_gravity="center_horizontal" />
 
+    <TextView
+        android:id="@+id/tv_link"
+        android:layout_weight="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="• 项目地址(https://github.com/zqisheng/AutoRecordAudio)"
+        android:textSize="12sp"
+        android:textColor="#0066CC"
+        android:gravity="bottom|center"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"
+        android:layout_gravity="bottom"
+        android:background="?android:attr/selectableItemBackground" />
 </LinearLayout>
