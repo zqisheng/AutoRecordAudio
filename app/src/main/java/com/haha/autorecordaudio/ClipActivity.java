@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class ClipActivity extends AppCompatActivity {
 
@@ -174,47 +176,65 @@ public class ClipActivity extends AppCompatActivity {
     }
 
     /**
-     * 核心剪辑方法：把剪辑后的数据写入用户选择的 Uri
+     * 改进版剪辑方法 - 修复整个文件噪音问题
      */
     private void trimWavToUri(Uri targetUri) throws IOException {
         final int HEADER_SIZE = 44;
         File inputFile = new File(filePath);
 
         try (RandomAccessFile raf = new RandomAccessFile(inputFile, "r");
-             OutputStream outputStream = getContentResolver().openOutputStream(targetUri)) {
+             OutputStream out = getContentResolver().openOutputStream(targetUri)) {
 
-            if (outputStream == null) throw new IOException("无法打开输出流");
+            if (out == null) throw new IOException("无法打开输出流");
 
+            // 读取原始 WAV 头
             byte[] header = new byte[HEADER_SIZE];
             raf.readFully(header);
 
-            int sampleRate = (header[24] & 0xff) | ((header[25] & 0xff) << 8) |
-                    ((header[26] & 0xff) << 16) | ((header[27] & 0xff) << 24);
-            int channels = header[22];
-            int bytesPerSample = header[34] / 8;
+            // 正确解析 WAV 头参数
+            int sampleRate = ByteBuffer.wrap(header, 24, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+            int channels = ByteBuffer.wrap(header, 22, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+            int bitsPerSample = ByteBuffer.wrap(header, 34, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+            int bytesPerSample = bitsPerSample / 8;           // 通常是 2
+            int blockAlign = channels * bytesPerSample;       // 4 for stereo 16bit
 
-            int bytesPerSecond = sampleRate * channels * bytesPerSample;
+            long byteRate = (long) sampleRate * blockAlign;
 
-            long startBytes = HEADER_SIZE + (long) (startMs / 1000.0 * bytesPerSecond);
-            long endBytes = HEADER_SIZE + (long) (endMs / 1000.0 * bytesPerSecond);
+            // 计算正确的字节位置（必须按 blockAlign 对齐）
+            long startBytes = HEADER_SIZE + (startMs * byteRate / 1000);
+            long endBytes = HEADER_SIZE + (endMs * byteRate / 1000);
+
+            // 对齐到采样点边界，减少噪音
+            startBytes = (startBytes / blockAlign) * blockAlign;
+            endBytes = (endBytes / blockAlign) * blockAlign;
+
             long dataLength = endBytes - startBytes;
+            if (dataLength <= 0) throw new IOException("剪辑范围无效");
 
-            // 写入新头
+            // 写入正确的 WAV 头
             long totalDataLen = dataLength;
             long totalFileLen = totalDataLen + 36;
-            writeWavHeader(outputStream, totalDataLen, totalFileLen, sampleRate, channels, (long) bytesPerSecond * 2);
+            writeWavHeader(out, totalDataLen, totalFileLen, sampleRate, channels, byteRate);
 
-            // 复制音频数据
+            // 跳转到起点并复制数据
             raf.seek(startBytes);
-            byte[] buffer = new byte[4096];
+
+            byte[] buffer = new byte[8192];
             long remaining = dataLength;
+
             while (remaining > 0) {
                 int toRead = (int) Math.min(buffer.length, remaining);
                 int read = raf.read(buffer, 0, toRead);
                 if (read <= 0) break;
-                outputStream.write(buffer, 0, read);
+                out.write(buffer, 0, read);
                 remaining -= read;
             }
+
+            Log.i("ClipActivity", "剪辑完成，数据长度: " + dataLength + " 字节");
+
+        } catch (Exception e) {
+            Log.e("ClipActivity", "剪辑失败", e);
+            throw e;
         }
     }
 
